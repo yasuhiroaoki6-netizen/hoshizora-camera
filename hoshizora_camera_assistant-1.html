@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101a35">
+<title>星空カメラ助手</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151e35;--panel2:#1c2947;--text:#f3f6ff;--muted:#aab6d3;--accent:#8bd5ff;--line:#30405f}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b2b50 0,#0b1020 55%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;line-height:1.55}
+main{max-width:760px;margin:auto;padding:20px 14px 36px}.hero{padding:22px 18px;border:1px solid #314466;border-radius:22px;background:linear-gradient(135deg,#1b2c50,#11182c)}
+h1{font-size:1.65rem;margin:0 0 6px}.sub{color:var(--muted);font-size:.94rem}.pill{display:inline-block;border:1px solid #4c6289;border-radius:999px;padding:3px 10px;font-size:.75rem;margin-bottom:10px;color:#c8eaff}
+nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:14px 0}nav button{background:#182541;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 4px;font-size:.82rem}nav button.active{background:#2b4b70;border-color:var(--accent)}
+section.panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px;margin:10px 0}section.panel.active{display:block}h2{font-size:1.15rem;margin:0 0 12px}h3{font-size:1rem;margin:16px 0 6px}
+label{display:block;margin:12px 0 5px;font-size:.9rem;color:#dbe6ff}select,input[type=range],input[type=file]{width:100%}select{padding:11px;border-radius:10px;background:#0e172b;color:var(--text);border:1px solid #435574;font-size:1rem}
+.result{background:var(--panel2);padding:14px;border-radius:13px;margin-top:13px;border:1px solid #354a70}.big{font-size:1.5rem;font-weight:750;color:var(--accent)}.muted{color:var(--muted);font-size:.87rem}.setting{display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid #30405f;padding:10px 0}.setting:last-child{border-bottom:0}.value{font-weight:700;color:#c7eaff;text-align:right}
+button.primary{background:#83d3ff;color:#081426;font-weight:750;border:0;border-radius:12px;padding:12px 15px;margin-top:12px;width:100%;font-size:1rem}
+.tip{border-left:3px solid var(--accent);padding:8px 12px;background:#111b31;margin:12px 0;border-radius:0 9px 9px 0}.map{width:100%;height:auto;background:#081326;border-radius:14px;border:1px solid #2c3c5a}.star{fill:#eaf6ff}.const{stroke:#5e8cba;stroke-width:1.5;fill:none;stroke-dasharray:4 4}.footer{font-size:.78rem;color:var(--muted);margin-top:20px}
+@media(max-width:420px){nav button{font-size:.72rem;padding:10px 1px}.hero{padding:18px 14px}main{padding:12px 10px 28px}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+<div class="pill">SONY α6400 / 星空撮影ビギナー向け</div>
+<h1>🌌 星空カメラ助手</h1>
+<div class="sub">今夜の撮影計画・設定メモ・写真チェックをひとつに。</div>
+</header>
+<nav aria-label="メニュー">
+<button class="active" data-tab="plan">今夜の計画</button><button data-tab="settings">撮影設定</button><button data-tab="check">写真チェック</button><button data-tab="guide">星空ナビ</button>
+</nav>
+
+<section class="panel active" id="plan">
+<h2>今夜、撮りに行く価値ある？</h2>
+<p class="muted">雲・月明かり・街明かりを選ぶと、簡易スコアを表示します。天気や月齢のリアルタイム取得はしません。</p>
+<label for="cloud">雲の量</label><select id="cloud"><option value="0">ほぼ快晴</option><option value="1">雲少なめ</option><option value="2" selected>雲が半分くらい</option><option value="3">曇りが多い</option><option value="4">ほぼ曇り</option></select>
+<label for="moon">月明かり</label><select id="moon"><option value="0">月が出ていない / 細い月</option><option value="1" selected>半月くらい</option><option value="2">明るい月 / 満月に近い</option></select>
+<label for="light">周りの明るさ</label><select id="light"><option value="0">かなり暗い場所</option><option value="1" selected>郊外・少し明かりあり</option><option value="2">街明かりが多い</option></select>
+<label for="target">撮りたいもの</label><select id="target"><option value="wide">星空全体・星座</option><option value="milky">天の川</option><option value="foreground">鳥居・建物と星</option></select>
+<button class="primary" id="scoreBtn">撮影コンディションを判定</button>
+<div class="result" id="scoreResult"><div class="big">入力して判定</div><div class="muted">まずは今夜の条件を選んでね。</div></div>
+<div class="tip">星空全体なら月が弱く、雲が少なく、街明かりが少ないほど有利。鳥居などを入れる場合は、星と地上風景を別撮りして合成する方法もあります。</div>
+</section>
+
+<section class="panel" id="settings">
+<h2>α6400の撮影設定メモ</h2>
+<p class="muted">レンズは SIGMA 18-50mm F2.8 を想定。まずはここから試して、撮った画像で調整。</p>
+<label for="focal">焦点距離：<span id="focalText">18 mm</span></label><input id="focal" type="range" min="18" max="50" step="1" value="18">
+<div class="result" id="settingsResult"></div>
+<h3>撮影前チェック</h3>
+<div class="setting"><span>モード</span><span class="value">M（マニュアル）</span></div>
+<div class="setting"><span>ピント</span><span class="value">MF・拡大表示で星に合わせる</span></div>
+<div class="setting"><span>手ブレ補正</span><span class="value">三脚ならOFFを試す</span></div>
+<div class="setting"><span>保存形式</span><span class="value">JPEGでOK</span></div>
+<div class="tip">星が点ではなく線になるならシャッターを短く。画面が白くなるなら、ISOを下げる前に周囲の光・月明かり・露出時間も確認しよう。</div>
+</section>
+
+<section class="panel" id="check">
+<h2>写真チェック（端末内のみ）</h2>
+<p class="muted">写真を選ぶと、ブラウザ内で画像の明るさの平均を簡易計算します。画像はアップロードされません。ピントや星の数をAI判定する機能ではありません。</p>
+<label for="photo">写真を選択</label><input id="photo" type="file" accept="image/*">
+<div class="result" id="photoResult">写真を選ぶとここにプレビューと簡易結果が出ます。</div>
+<canvas id="canvas" hidden></canvas>
+</section>
+
+<section class="panel" id="guide">
+<h2>星空ナビ（模式図）</h2>
+<p class="muted">これは星のつながり方をイメージするための図です。現在の方角・時刻・位置に対応した正確な星図ではありません。</p>
+<svg class="map" viewBox="0 0 320 230" role="img" aria-label="星空の模式図">
+<g class="const"><path d="M35 40 L78 65 L110 35 L145 70 L175 48"/><path d="M210 40 L230 80 L265 65 L285 105"/><path d="M60 145 L95 125 L125 160 L155 135 L180 170"/><path d="M210 155 L240 135 L270 165"/></g>
+<g class="star"><circle cx="35" cy="40" r="3"/><circle cx="78" cy="65" r="2"/><circle cx="110" cy="35" r="4"/><circle cx="145" cy="70" r="2.5"/><circle cx="175" cy="48" r="3"/><circle cx="210" cy="40" r="3"/><circle cx="230" cy="80" r="2"/><circle cx="265" cy="65" r="4"/><circle cx="285" cy="105" r="2.5"/><circle cx="60" cy="145" r="3"/><circle cx="95" cy="125" r="2"/><circle cx="125" cy="160" r="3.5"/><circle cx="155" cy="135" r="2"/><circle cx="180" cy="170" r="3"/><circle cx="210" cy="155" r="2.5"/><circle cx="240" cy="135" r="3.5"/><circle cx="270" cy="165" r="2"/></g>
+<g fill="#aab6d3" font-size="10"><text x="12" y="20">模式図 / not to scale</text><text x="16" y="205">方角や季節で見える星は変わる</text></g>
+</svg>
+<div class="tip">実際の星座や天の川の位置を調べるときは、星図アプリで撮影場所・日時・方角を合わせて確認してね。</div>
+</section>
+<div class="footer">このページはオフラインでも基本機能が動く簡易ツールです。天気・雲量・月齢の自動取得、AI画像解析、正確な星図表示は未対応です。</div>
+</main>
+<script>
+const tabs=[...document.querySelectorAll('nav button')];
+tabs.forEach(b=>b.addEventListener('click',()=>{tabs.forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('section.panel').forEach(s=>s.classList.toggle('active',s.id===b.dataset.tab));}));
+const $=id=>document.getElementById(id);
+function score(){
+ const c=+$('cloud').value,m=+$('moon').value,l=+$('light').value,t=$('target').value;
+ let s=100-c*19-m*([0,9,19][m])-l*12;
+ if(t==='milky')s-=m*14;
+ if(t==='foreground')s+=5;
+ s=Math.max(0,Math.min(100,s));
+ let title=s>=75?'かなり期待できそう':s>=55?'条件次第で撮影チャンス':s>=35?'練習撮影ならあり':'星空目的なら見送り寄り';
+ let advice=t==='milky'?'天の川狙いは月明かりと街明かりをできるだけ避けて。':t==='foreground'?'地上の建物も入れるなら構図を先に決め、必要なら地上と星空を別撮り。':'広角で空を広く入れ、星が点に写るシャッター速度から試そう。';
+ $('scoreResult').innerHTML=`<div class="big">${s} / 100</div><strong>${title}</strong><p>${advice}</p><div class="muted">※入力条件からの目安。実際の雲量・透明度・光害で変わります。</div>`;
+}
+$('scoreBtn').addEventListener('click',score);
+function updateSettings(){
+ const f=+$('focal').value;$('focalText').textContent=f+' mm';
+ let shutter=f<=20?'10〜15秒':f<=28?'8〜10秒':f<=35?'6〜8秒':'4〜6秒';
+ $('settingsResult').innerHTML=`<div class="setting"><span>F値</span><span class="value">F2.8</span></div><div class="setting"><span>シャッター速度</span><span class="value">${shutter}から試す</span></div><div class="setting"><span>ISO</span><span class="value">1600から試す</span></div><div class="setting"><span>撮影のコツ</span><span class="value">${f<=24?'まず広角で空を広く': '星が流れやすいので短めの露光'}</span></div><p class="muted">明るすぎる場合はISOを800などへ。暗すぎる場合はISOを3200へ上げるか、シャッターを少し長く。星の流れも確認。</p>`;
+}
+$('focal').addEventListener('input',updateSettings);updateSettings();
+$('photo').addEventListener('change',()=>{
+ const file=$('photo').files[0];if(!file)return;
+ const url=URL.createObjectURL(file),img=new Image();
+ img.onload=()=>{
+  const canvas=$('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const w=160,h=Math.max(1,Math.round(img.height*w/img.width));canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);
+  const d=ctx.getImageData(0,0,w,h).data;let sum=0;
+  for(let i=0;i<d.length;i+=4)sum+=(d[i]+d[i+1]+d[i+2])/3;
+  const avg=sum/(d.length/4),desc=avg<35?'かなり暗め':avg<90?'暗め〜標準':avg<155?'明るめ':'かなり明るめ';
+  $('photoResult').innerHTML=`<img src="${url}" alt="選択した写真" style="width:100%;max-height:320px;object-fit:contain;border-radius:10px"><p><strong>平均明るさ：${avg.toFixed(1)} / 255（${desc}）</strong></p><p class="muted">これは画像全体の平均値です。星のピントや構図の良し悪しは判定していません。</p>`;
+ };
+ img.onerror=()=>{$('photoResult').textContent='この画像は読み込めませんでした。別の画像を試してください。'};
+ img.src=url;
+});
+</script>
+</body>
+</html>
